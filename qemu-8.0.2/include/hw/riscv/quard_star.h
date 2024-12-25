@@ -32,6 +32,7 @@ enum {
     QUARD_STAR_UART0,
     QUARD_STAR_UART1,
     QUARD_STAR_UART2,
+    QUARD_STAR_RTC,
     QUARD_STAR_FLASH,
     QUARD_STAR_DRAM,
 };
@@ -40,6 +41,7 @@ enum {
     QUARD_STAR_UART0_IRQ = 10,  //定义了串口中断号为10
     QUARD_STAR_UART1_IRQ = 11,
     QUARD_STAR_UART2_IRQ = 12,
+    QUARD_STAR_RTC_IRQ   = 13,
 };
 
 #define QUARD_STAR_PLIC_NUM_SOURCES    127      //PLIC 支持的中断源的最大数量

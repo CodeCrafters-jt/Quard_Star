@@ -42,6 +42,7 @@ static const MemMapEntry quard_star_memmap[] = {
     [QUARD_STAR_UART0] = { 0x10000000,         0x100 },  
     [QUARD_STAR_UART1] = { 0x10001000,         0x100 },
     [QUARD_STAR_UART2] = { 0x10002000,         0x100 },
+    [QUARD_STAR_RTC]   = { 0x10003000,        0x1000 },
     [QUARD_STAR_FLASH] = { 0x20000000,     0x2000000 },   
     [QUARD_STAR_DRAM]  = { 0x80000000,          0x80 },   
 };
@@ -154,6 +155,7 @@ static void quard_star_memory_create(MachineState *machine)
     memory_region_add_subregion(system_memory, 
                                 quard_star_memmap[QUARD_STAR_MROM].base, mask_rom);
 
+    /* 从0号cpu开始加载复位程序，随后跳转到 flash位置开始执行*/
     riscv_setup_rom_reset_vec(machine, &s->soc[0], 
                               quard_star_memmap[QUARD_STAR_FLASH].base,
                               quard_star_memmap[QUARD_STAR_MROM].base,
@@ -229,6 +231,14 @@ static void quard_star_serial_create(MachineState *machine)
         serial_hd(2), DEVICE_LITTLE_ENDIAN);
 }
 
+/* 创建 RTC */
+static void quard_star_rtc_create(MachineState *machine)
+{    
+    QuardStarState *s = RISCV_VIRT_MACHINE(machine);
+    sysbus_create_simple("goldfish_rtc", quard_star_memmap[QUARD_STAR_RTC].base,
+        qdev_get_gpio_in(DEVICE(s->plic[0]), QUARD_STAR_RTC_IRQ));
+}
+
 /* quard-star 初始化各种硬件 */
 static void quard_star_machine_init(MachineState *machine)
 {
@@ -244,6 +254,8 @@ static void quard_star_machine_init(MachineState *machine)
     quard_star_aclint_create(machine);
     //创建三个uart
     quard_star_serial_create(machine);
+    //创建 RTC
+    quard_star_rtc_create(machine);
 }
 
 static void quard_star_machine_instance_init(Object *obj)

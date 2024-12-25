@@ -17,11 +17,22 @@
 #include "hw/intc/riscv_aclint.h"
 #include "hw/intc/riscv_aplic.h"
 
+#include "hw/intc/riscv_imsic.h"
+#include "hw/platform-bus.h"
+#include "hw/intc/sifive_plic.h"
+#include "hw/misc/sifive_test.h"
+
 #include "chardev/char.h"
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/kvm.h"
 #include "sysemu/tpm.h"
+
+#include "hw/pci/pci.h"
+#include "hw/pci-host/gpex.h"
+#include "hw/display/ramfb.h"
+#include "hw/acpi/aml-build.h"
+#include "qapi/qapi-visit-common.h"
 
 static const MemMapEntry quard_star_memmap[] = {
     [QUARD_STAR_MROM]  = {        0x0,        0x8000 },   
@@ -29,6 +40,8 @@ static const MemMapEntry quard_star_memmap[] = {
     [QUARD_STAR_CLINT] = { 0x02000000,       0x10000 },
     [QUARD_STAR_PLIC]  = { 0x0c000000,     0x4000000 },
     [QUARD_STAR_UART0] = { 0x10000000,         0x100 },  
+    [QUARD_STAR_UART1] = { 0x10001000,         0x100 },
+    [QUARD_STAR_UART2] = { 0x10002000,         0x100 },
     [QUARD_STAR_FLASH] = { 0x20000000,     0x2000000 },   
     [QUARD_STAR_DRAM]  = { 0x80000000,          0x80 },   
 };
@@ -199,6 +212,23 @@ static void quard_star_aclint_create(MachineState *machine)
     }
 }
 
+/* 创建3个 uart */
+static void quard_star_serial_create(MachineState *machine)
+{
+    MemoryRegion *system_memory = get_system_memory();
+    QuardStarState *s = RISCV_VIRT_MACHINE(machine);
+    
+    serial_mm_init(system_memory, quard_star_memmap[QUARD_STAR_UART0].base,
+        0, qdev_get_gpio_in(DEVICE(s->plic[0]), QUARD_STAR_UART0_IRQ), 399193,
+        serial_hd(0), DEVICE_LITTLE_ENDIAN);
+    serial_mm_init(system_memory, quard_star_memmap[QUARD_STAR_UART1].base,
+        0, qdev_get_gpio_in(DEVICE(s->plic[0]), QUARD_STAR_UART1_IRQ), 399193,
+        serial_hd(1), DEVICE_LITTLE_ENDIAN);
+    serial_mm_init(system_memory, quard_star_memmap[QUARD_STAR_UART2].base,
+        0, qdev_get_gpio_in(DEVICE(s->plic[0]), QUARD_STAR_UART2_IRQ), 399193,
+        serial_hd(2), DEVICE_LITTLE_ENDIAN);
+}
+
 /* quard-star 初始化各种硬件 */
 static void quard_star_machine_init(MachineState *machine)
 {
@@ -212,6 +242,8 @@ static void quard_star_machine_init(MachineState *machine)
     quard_star_plic_create(machine);
     //创建RISCV_ACLINT
     quard_star_aclint_create(machine);
+    //创建三个uart
+    quard_star_serial_create(machine);
 }
 
 static void quard_star_machine_instance_init(Object *obj)

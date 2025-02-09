@@ -5,5 +5,5 @@ output
 qemu-8.0.2/build
 qemu.log
 opensbi-0.9
-*.out
+*.elf
 *.map
